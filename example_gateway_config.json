@@ -1,0 +1,87 @@
+{
+  "MulticastGatewayConfiguration": {
+    "MulticastSession": [
+      {
+        "PresentationManifestLocator": "http://172.16.0.208/bpk-tv/orp01-ten999-ch003/dash-sb/index.mpd",
+        "MulticastTransportSession": [
+          {
+            "TransportProtocol": "",
+            "EndpointAddress": {
+              "NetworkSourceAddress": "192.168.30.242",
+              "NetworkDestinationGroupAddress": "224.31.5.22",
+              "TransportDestinationPort": 50023,
+              "MediaTransportSessionIdentfier": 50023
+            },
+            "BitRate": "",
+            "ServiceComponentIdentifier": ""
+          },
+          {
+            "TransportProtocol": "",
+            "EndpointAddress": {
+              "NetworkSourceAddress": "192.168.30.242",
+              "NetworkDestinationGroupAddress": "224.31.5.23",
+              "TransportDestinationPort": 50024,
+              "MediaTransportSessionIdentfier": 50024
+            },
+            "BitRate": "",
+            "ServiceComponentIdentifier": ""
+          }
+        ]
+      },
+      {
+        "PresentationManifestLocator": "http://172.16.0.208/bpk-tv/orp01-ten999-ch002/dash-sb/index.mpd",
+        "MulticastTransportSession": [
+          {
+            "TransportProtocol": "",
+            "EndpointAddress": {
+              "NetworkSourceAddress": "192.168.30.242",
+              "NetworkDestinationGroupAddress": "224.31.5.18",
+              "TransportDestinationPort": 50019,
+              "MediaTransportSessionIdentfier": 50019
+            },
+            "BitRate": "",
+            "ServiceComponentIdentifier": ""
+          },
+          {
+            "TransportProtocol": "",
+            "EndpointAddress": {
+              "NetworkSourceAddress": "192.168.30.242",
+              "NetworkDestinationGroupAddress": "224.31.5.21",
+              "TransportDestinationPort": 50022,
+              "MediaTransportSessionIdentfier": 50022
+            },
+            "BitRate": "",
+            "ServiceComponentIdentifier": ""
+          }
+        ]
+      },
+      {
+        "PresentationManifestLocator": "http://172.16.0.208/bpk-tv/orp01-ten999-ch004/dash-sb/index.mpd",
+        "MulticastTransportSession": [
+          {
+            "TransportProtocol": "",
+            "EndpointAddress": {
+              "NetworkSourceAddress": "192.168.30.242",
+              "NetworkDestinationGroupAddress": "224.31.5.14",
+              "TransportDestinationPort": 50015,
+              "MediaTransportSessionIdentfier": 50015
+            },
+            "BitRate": "",
+            "ServiceComponentIdentifier": ""
+          },
+          {
+            "TransportProtocol": "",
+            "EndpointAddress": {
+              "NetworkSourceAddress": "192.168.30.242",
+              "NetworkDestinationGroupAddress": "224.31.5.19",
+              "TransportDestinationPort": 50020,
+              "MediaTransportSessionIdentfier": 50020
+            },
+            "BitRate": "",
+            "ServiceComponentIdentifier": ""
+          }
+        ]
+      }
+    ]
+  }
+}

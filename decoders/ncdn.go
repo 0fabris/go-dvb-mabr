@@ -2,8 +2,10 @@ package decoders
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/0fabris/go-dvb-mabr/classes"
@@ -40,11 +42,13 @@ func NCDNPayloadDecoder(callback func(*classes.MABRFile) error) func([]byte) err
 
 			if !infoPacket.IsRefreshingFilename && infoPacket.Filename != nil {
 				latestFilename = infoPacket.Filename
-				// removing get parameters
-				if strings.Contains(*latestFilename, "?") {
-					fsegm := strings.Split(*infoPacket.Filename, "?")
-					latestFilename = &fsegm[0]
-				}
+				/*
+					// removing get parameters
+					if strings.Contains(*latestFilename, "?") {
+						fsegm := strings.Split(*infoPacket.Filename, "?")
+						latestFilename = &fsegm[0]
+					}
+				*/
 			}
 
 			if sharedDataMap != nil && !(slices.Equal(infoPacket.GetBlock(), latestBlock)) {
@@ -169,32 +173,75 @@ func ParseNCDNInfoRow(row string) classes.NCDNStream {
 	ret.ServiceID = bpkData.Get("sri")
 	ret.RFUn = bpkData.Get("rfun")
 	ret.DataSpeed = bpkData.Get("dspd")
-	ret.VideoStreams = map[string]string{}
-	videos := bpkData.Get("lsv")
+
+	// Parsing VideoStreams
 	videoBaseIP := ipaddr.NewIPAddressString(bpkData.Get("mi"))
-	for i, v := range strings.Split(videos, ",") {
-		// building ip
-		addr := videoBaseIP.GetAddress().Increment(int64(i))
-		ret.VideoStreams[addr.ToCanonicalString()] = v
-	}
-	ret.VideoPort = bpkData.Get("mp")
+	ret.VideoPort, _ = strconv.ParseUint(bpkData.Get("mp"), 0, 32)
+	ret.VideoStreams = map[string]string{}
 
-	ret.AudioStreams = map[string]string{}
-	audios := bpkData.Get("lsa")
-	if audios == "" {
-		audios = bpkData.Get("plaa")
-	} else if audios == "" {
-		audios = bpkData.Get("pla")
-	} else if audios == "" {
-		audios = bpkData.Get("lma")
+	if videos := bpkData.Get("lsv"); videos != "" {
+		for i, v := range strings.Split(videos, ",") {
+			// building ip
+			addr := videoBaseIP.GetAddress().Increment(int64(i))
+			ret.VideoStreams[fmt.Sprintf("%s:%d", addr.ToCanonicalString(), ret.VideoPort)] = v
+		}
+	} else if videos := bpkData.Get("plav"); videos != "" {
+		addr := videoBaseIP.GetAddress()
+		for _, v := range strings.Split(videos, ",") {
+			// building ip
+			index, _ := strconv.ParseUint(v, 0, 32)
+			ret.VideoStreams[fmt.Sprintf("%s:%d", addr.ToCanonicalString(), ret.VideoPort+index-1)] = v
+		}
 	}
+
+	// TODO parse plv, lmv
+
+	// Parsing AudioStreams
 	audioBaseIP := ipaddr.NewIPAddressString(bpkData.Get("mia"))
-	for i, v := range strings.Split(audios, ",") {
-		// building ip
-		addr := audioBaseIP.GetAddress().Increment(int64(i))
-		ret.AudioStreams[addr.ToCanonicalString()] = v
-	}
-	ret.AudioPort = bpkData.Get("mpa")
+	ret.AudioPort, _ = strconv.ParseUint(bpkData.Get("mpa"), 0, 32)
+	ret.AudioStreams = map[string]string{}
 
+	if audios := bpkData.Get("lsa"); audios != "" {
+		for i, v := range strings.Split(audios, ",") {
+			// building ip
+			addr := audioBaseIP.GetAddress().Increment(int64(i))
+			ret.AudioStreams[fmt.Sprintf("%s:%d", addr.ToCanonicalString(), ret.AudioPort)] = v
+		}
+	} else if audios := bpkData.Get("plaa"); audios != "" {
+		addr := audioBaseIP.GetAddress()
+		for _, v := range strings.Split(audios, ",") {
+			// building ip
+			index, _ := strconv.ParseUint(v, 0, 32)
+			ret.AudioStreams[fmt.Sprintf("%s:%d", addr.ToCanonicalString(), ret.AudioPort+index-1)] = v
+		}
+	}
+
+	// TODO handle pla, lma
+
+	// Parsing DataStreams
+	dataBaseIP := ipaddr.NewIPAddressString(bpkData.Get("mid"))
+	if bpkData.Get("mid") == "" {
+		dataBaseIP = ipaddr.NewIPAddressString(bpkData.Get("mi"))
+	}
+	ret.DataPort, _ = strconv.ParseUint(bpkData.Get("mpd"), 0, 32)
+	ret.DataStreams = map[string]string{}
+
+	if ret.DataPort > 0 {
+
+		if datas := bpkData.Get("lsd"); datas != "" {
+			for i, v := range strings.Split(datas, ",") {
+				// building ip
+				addr := dataBaseIP.GetAddress().Increment(int64(i))
+				ret.DataStreams[fmt.Sprintf("%s:%d", addr.ToCanonicalString(), ret.DataPort)] = v
+			}
+		} else if datas := bpkData.Get("plad"); datas != "" {
+			addr := dataBaseIP.GetAddress()
+			for _, v := range strings.Split(datas, ",") {
+				// building ip
+				index, _ := strconv.ParseUint(v, 0, 32)
+				ret.DataStreams[fmt.Sprintf("%s:%d", addr.ToCanonicalString(), ret.DataPort+index-1)] = v
+			}
+		}
+	}
 	return ret
 }

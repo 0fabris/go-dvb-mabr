@@ -36,6 +36,7 @@ func (fh *FluteHeader) Parse(b []byte) error {
 }
 
 func (fp *FlutePacket) Parse(b []byte) error {
+
 	fp.Header = FluteHeader{}
 	if err := fp.Header.Parse(b); err != nil {
 		return err
@@ -44,6 +45,9 @@ func (fp *FlutePacket) Parse(b []byte) error {
 		return fmt.Errorf("Short len of flute packet")
 	}
 	fp.Data = b[fp.Header.Length:]
-	fp.Data = fp.Data[:len(fp.Data)-3]
+	if len(fp.Data) < 3 {
+		return fmt.Errorf("Short len of flute packet")
+	}
+	fp.Data = fp.Data[:len(fp.Data)] //-3]
 	return nil
 }

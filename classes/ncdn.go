@@ -28,9 +28,11 @@ type NCDNStream struct {
 	URL           string            `json:"url"`
 	BroadpeakData string            `json:"bpkData"`
 	VideoStreams  map[string]string `json:"videoStreams"`
-	VideoPort     string            `json:"videoPort"`
+	VideoPort     uint64            `json:"-"`
 	AudioStreams  map[string]string `json:"audioStreams"`
-	AudioPort     string            `json:"audioPort"`
+	AudioPort     uint64            `json:"-"`
+	DataStreams   map[string]string `json:"dataStreams"`
+	DataPort      uint64            `json:"-"`
 	ServiceType   string            `json:"serviceType"`
 	ServiceID     string            `json:"serviceId"`
 	DataSpeed     string            `json:"dataSpeed"`

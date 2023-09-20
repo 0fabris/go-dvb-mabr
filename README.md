@@ -14,7 +14,7 @@ package main
 import (
     "fmt"
     mabrc "github.com/0fabris/go-dvb-mabr/classes"
-	"github.com/0fabris/go-dvb-mabr"
+	mabr "github.com/0fabris/go-dvb-mabr"
 )
 
 func yourCallbackFunction(f *mabrc.MABRFile) error {
@@ -40,6 +40,9 @@ func main(){
         udpPayload := []byte{/*...*/}
 
         if err := fluteDecoder(udpPayload); err != nil{
+            fmt.Println(err.Error())
+        }
+        if err := nCDNDecoder(udpPayload); err != nil{
             fmt.Println(err.Error())
         }
     }

@@ -113,7 +113,5 @@ func fluteConfigurationPacketHandler(callback func(*classes.MABRFile) error) fun
 }
 
 func fluteTimeInfoPacketHandler(callback func(*classes.MABRFile) error) func(*classes.FlutePacket) error {
-	return func(packet *classes.FlutePacket) error {
-		return nil
-	}
+	return fluteDataPacketHandler(callback)
 }

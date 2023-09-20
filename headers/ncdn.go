@@ -9,7 +9,11 @@ const (
 	NCDN_INFO_DATA_SEP    = ";"
 )
 
-// Consts
-var NCDN_HEADER_HEAD_PACKET []byte = []byte{0x80, 0xA1}
+const (
+	NCDN_HEADER_BYTE byte = 0x80
+)
 
-var NCDN_HEADER_DATA_PACKET []byte = []byte{0x80, 0x21}
+// Consts
+var NCDN_HEADER_HEAD_PACKET = []byte{NCDN_HEADER_BYTE, 0xA1}
+
+var NCDN_HEADER_DATA_PACKET = []byte{NCDN_HEADER_BYTE, 0x21}

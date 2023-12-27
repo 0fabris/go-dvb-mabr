@@ -48,7 +48,7 @@ func fluteDataPacketHandler(callback func(*classes.MABRFile) error) func(*classe
 
 	return func(packet *classes.FlutePacket) error {
 		switch packet.Header.Data[2] {
-		case headers.FLUTE_DATA_HEAD_PACKET:
+		case headers.FLUTE_DATA_HEAD_PACKET, headers.FLUTE_DATA_XMLD_PACKET:
 			if packet.Header.TOI != previousInfoSession || packet.Header.LatestPosition == 0 {
 				previousInfoSession = packet.Header.TOI
 				// extracting data from queue
@@ -94,7 +94,7 @@ func fluteDataPacketHandler(callback func(*classes.MABRFile) error) func(*classe
 										fmt.Printf("Error during callback: %+v\n", err)
 									}
 									// removing from map
-									packetMap[f.TOI] = nil
+									delete(packetMap, f.TOI)
 								}
 							}
 						}

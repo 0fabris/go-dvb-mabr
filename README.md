@@ -1,9 +1,9 @@
 GO DVB-MABR decoders
 ---
 
-This library helps you handling a FLUTE (File Delivery over Unidirectional Transport) or a common nCDN data transfer over UDP/DVB-x
+This library helps you handling a FLUTE (File Delivery over Unidirectional Transport) or a common nCDN data transfer over UDP/DVB-x with the (partial) implementation of some RFCs, such as RFC5651 and some of its 'dependencies'.
 
-This library was built reverse-engineering the udp-multicast payloads from Hotbird 10949V (PID 2011 for Infos, 2012 for Data) and 12073V (PIDs 1011 for Infos, 1012 for Data).
+This library was built reverse-engineering the udp-multicast payloads from Hotbird 10949V (PID 2011 for Infos, 2012 for Data), 12073V (PIDs 1011 for Infos, 1012 for Data), 12360H (PID 300 for Data). 
 
 All rights belong to their respective owners
 

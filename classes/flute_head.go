@@ -2,27 +2,23 @@ package classes
 
 import (
 	"encoding/xml"
+
+	route "github.com/0fabris/go-dvb-route"
 )
 
-type FlutePacketType uint8
-
-const (
-	FLUTE_TIME_PACKET FlutePacketType = 0x50
-	FLUTE_DATA_PACKET FlutePacketType = 0x10
-	FLUTE_CONF_PACKET FlutePacketType = 0x01
-)
-
+// Type Definition
 type FlutePacket struct {
-	Data   []byte
+	Data   []byte // (payload)
 	Header FluteHeader
 }
 
 type FluteHeader struct {
-	Data           []byte
-	Length         int
-	PacketType     FlutePacketType
-	LatestPosition uint64
-	TOI            uint32
+	Data       []byte
+	LCT        route.LCTHeader
+	FECOTI     route.FECObjectTransmissionInformation
+	FECPayload route.FECPayloadID
+	TOI        uint64
+	Length     uint16
 }
 
 type FluteFDTInstance struct {
@@ -44,7 +40,7 @@ type FluteFile struct {
 	FECOTIEncodingSymbolLength     int    `xml:"FEC-OTI-Encoding-Symbol-Length,attr"`
 	FECOTIFECEncodingID            string `xml:"FEC-OTI-FEC-Encoding-ID,attr"`
 	FECOTIMaximumSourceBlockLength int    `xml:"FEC-OTI-Maximum-Source-Block-Length,attr"`
-	TOI                            uint32 `xml:"TOI,attr"`
+	TOI                            uint64 `xml:"TOI,attr"`
 	TransferLength                 string `xml:"Transfer-Length,attr"`
 	Delimiter                      string `xml:"delimiter"`
 }

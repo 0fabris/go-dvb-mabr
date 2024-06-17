@@ -5,113 +5,91 @@ import (
 	"fmt"
 
 	"github.com/0fabris/go-dvb-mabr/classes"
-	"github.com/0fabris/go-dvb-mabr/headers"
-	"github.com/phf/go-queue/queue"
+	route "github.com/0fabris/go-dvb-route"
 )
 
 // This is the FLUTE payload decoder, the parameter is the callback function, called when a file is ready to use
 func FlutePayloadDecoder(fHandler func(*classes.MABRFile) error) func([]byte) error {
 
-	var dH = fluteDataPacketHandler(fHandler)
-	var cH = fluteConfigurationPacketHandler(fHandler)
-	var tH = fluteTimeInfoPacketHandler(fHandler)
-
+	var dH = fluteGenericPacketHandler(fHandler)
 	return func(payload []byte) error {
 		// creating flute packet
 		packet := classes.FlutePacket{}
-
 		// parsing payload
 		if err := packet.Parse(payload); err != nil {
 			return err
 		}
-
-		switch packet.Header.PacketType {
-		case classes.FLUTE_DATA_PACKET:
-			return dH(&packet)
-		case classes.FLUTE_CONF_PACKET:
-			return cH(&packet)
-		case classes.FLUTE_TIME_PACKET:
-			return tH(&packet)
-		default:
-		}
-		return fmt.Errorf("Unknown Flute Packet Type!")
+		return dH(&packet)
 	}
 }
 
-func fluteDataPacketHandler(callback func(*classes.MABRFile) error) func(*classes.FlutePacket) error {
-	var infoQ = queue.New()
-	var dataQ = queue.New()
-	var previousInfoSession uint32 = 0
-	var previousDataSession uint32 = 0
+func fluteGenericPacketHandler(callback func(*classes.MABRFile) error) func(*classes.FlutePacket) error {
+	var tmpFDTdata []byte
 	var latestFDT *classes.FluteFDTInstance = nil
-	var packetMap = map[uint32][]byte{}
+	var previousFDT *classes.FluteFDTInstance = nil
+	var FDTend = "</FDT-Instance>"
+
+	var processNOPPackets = processFluteDataPacketContent(callback)
+	var processFTIPackets = processFluteDataPacketContent(callback)
 
 	return func(packet *classes.FlutePacket) error {
-		switch packet.Header.Data[2] {
-		case headers.FLUTE_DATA_HEAD_PACKET, headers.FLUTE_DATA_XMLD_PACKET:
-			if packet.Header.TOI != previousInfoSession || packet.Header.LatestPosition == 0 {
-				previousInfoSession = packet.Header.TOI
-				// extracting data from queue
-				if infoQ.Len() > 0 {
-					rawData := []byte{}
-					for infoQ.Len() > 0 {
-						if a := infoQ.PopFront(); a != nil {
-							rawData = append(rawData, a.([]byte)...)
-						}
-					}
-					infoQ.Init()
+		switch packet.Header.LCT.HET.Type {
+		case route.HET_EXT_FDT:
+			{
+				tmpFDTdata = append(tmpFDTdata, packet.Data...)
+				// if end is FDT-Instance close tag, start parsing
+				if string(packet.Data[len(packet.Data)-len(FDTend):]) == FDTend {
+					previousFDT = latestFDT
 					latestFDT = &classes.FluteFDTInstance{}
-					xml.Unmarshal(rawData, latestFDT)
+					xml.Unmarshal(tmpFDTdata, latestFDT)
+					tmpFDTdata = []byte{}
 				}
 			}
-			infoQ.PushBack(packet.Data)
-		case headers.FLUTE_DATA_BODY_PACKET:
-			if packet.Header.TOI != previousDataSession || packet.Header.LatestPosition == 0 {
-				previousDataSession = packet.Header.TOI
-
-				if dataQ.Len() > 0 {
-					// extracting data from queue
-					rawData := []byte{}
-					for dataQ.Len() > 0 {
-						if a := dataQ.PopFront(); a != nil {
-							//fmt.Printf("a: %v\n", len(a.([]byte)))
-							rawData = append(rawData, a.([]byte)...)
-						}
-					}
-					dataQ.Init()
-					// if consistent packet
-					if len(rawData) > 0 {
-						packetMap[packet.Header.TOI-1] = rawData
-						if latestFDT != nil {
-							for _, f := range latestFDT.File {
-								if val, ok := packetMap[f.TOI]; ok && len(val) > 0 {
-									// using val
-									if err := callback(&classes.MABRFile{
-										Location:    f.ContentLocation,
-										Content:     val,
-										HTTPHeaders: nil,
-									}); err != nil {
-										fmt.Printf("Error during callback: %+v\n", err)
-									}
-									// removing from map
-									delete(packetMap, f.TOI)
-								}
-							}
-						}
-					}
-				}
+		case route.HET_EXT_NOP:
+			{
+				processNOPPackets(packet, previousFDT) // for other streams
 			}
-			dataQ.PushBack(packet.Data)
+		case route.HET_EXT_FTI:
+			{
+				processFTIPackets(packet, latestFDT) // for Inverto DVB-I streams
+			}
+		default:
+			fmt.Printf("Unknown packet LCT Type: %02x\n", packet.Header.LCT.HET.Type)
 		}
 		return nil
 	}
 }
 
-/* Work In Progress */
-func fluteConfigurationPacketHandler(callback func(*classes.MABRFile) error) func(*classes.FlutePacket) error {
-	return fluteDataPacketHandler(callback)
-}
+func processFluteDataPacketContent(callback func(*classes.MABRFile) error) func(*classes.FlutePacket, *classes.FluteFDTInstance) {
+	var packetMap = map[uint64][]byte{}
+	var previousTOI uint64
 
-func fluteTimeInfoPacketHandler(callback func(*classes.MABRFile) error) func(*classes.FlutePacket) error {
-	return fluteDataPacketHandler(callback)
+	return func(packet *classes.FlutePacket, fdt *classes.FluteFDTInstance) {
+
+		if _, ok := packetMap[packet.Header.TOI]; !ok {
+			packetMap[packet.Header.TOI] = []byte{}
+		}
+
+		packetMap[packet.Header.TOI] = append(packetMap[packet.Header.TOI], packet.Data...)
+		if fdt != nil && previousTOI != packet.Header.TOI {
+			for _, f := range fdt.File {
+				if f.TOI != previousTOI {
+					continue
+				}
+
+				// if existing TOI in packetMap table
+				if val, ok := packetMap[f.TOI]; ok && len(val) > 0 {
+					if err := callback(&classes.MABRFile{
+						Location:    f.ContentLocation,
+						Content:     val,
+						HTTPHeaders: nil,
+					}); err != nil {
+						fmt.Printf("Error during callback: %+v\n", err)
+					}
+					delete(packetMap, f.TOI)
+				}
+			}
+			previousTOI = packet.Header.TOI
+		}
+	}
 }

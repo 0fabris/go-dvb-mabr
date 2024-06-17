@@ -3,7 +3,7 @@ package classes
 import (
 	"encoding/xml"
 
-	route "github.com/0fabris/go-dvb-route"
+	"github.com/0fabris/go-dvb-mabr/flute"
 )
 
 // Type Definition
@@ -14,9 +14,9 @@ type FlutePacket struct {
 
 type FluteHeader struct {
 	Data       []byte
-	LCT        route.LCTHeader
-	FECOTI     route.FECObjectTransmissionInformation
-	FECPayload route.FECPayloadID
+	LCT        flute.LCTHeader
+	FECOTI     flute.FECObjectTransmissionInformation
+	FECPayload flute.FECPayloadID
 	TOI        uint64
 	Length     uint16
 }

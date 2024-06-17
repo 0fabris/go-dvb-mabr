@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/0fabris/go-dvb-mabr/classes"
-	route "github.com/0fabris/go-dvb-route"
+	"github.com/0fabris/go-dvb-mabr/flute"
 )
 
 // This is the FLUTE payload decoder, the parameter is the callback function, called when a file is ready to use
@@ -34,7 +34,7 @@ func fluteGenericPacketHandler(callback func(*classes.MABRFile) error) func(*cla
 
 	return func(packet *classes.FlutePacket) error {
 		switch packet.Header.LCT.HET.Type {
-		case route.HET_EXT_FDT:
+		case flute.HET_EXT_FDT:
 			{
 				tmpFDTdata = append(tmpFDTdata, packet.Data...)
 				// if end is FDT-Instance close tag, start parsing
@@ -45,11 +45,11 @@ func fluteGenericPacketHandler(callback func(*classes.MABRFile) error) func(*cla
 					tmpFDTdata = []byte{}
 				}
 			}
-		case route.HET_EXT_NOP:
+		case flute.HET_EXT_NOP:
 			{
 				processNOPPackets(packet, previousFDT) // for other streams
 			}
-		case route.HET_EXT_FTI:
+		case flute.HET_EXT_FTI:
 			{
 				processFTIPackets(packet, latestFDT) // for Inverto DVB-I streams
 			}
